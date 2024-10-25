@@ -9,3 +9,9 @@
 .icon-container:hover{
     background-color: #1e1e1e;
 }
+.margin{
+    margin-right: 5px;
+}
+.not-found{
+    text-align: center;
+}

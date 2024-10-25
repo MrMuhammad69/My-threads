@@ -5,8 +5,6 @@ import cookieParser from "cookie-parser";
 import userRoutes from './Routes/user.route.js'
 import postRoutes from './Routes/post.route.js'
 import protectRoute from "./middleware/protectRoute.js";
-import {v2 as cloudinary} from 'cloudinary'
-import bodyParser from "body-parser";
 dotenv.config();
 connectDB()
 
@@ -14,10 +12,9 @@ connectDB()
 const app = express()
 const PORT = process.env.PORT || 5000;
 
-app.use(express.json())
+app.use(express.json({limit: "50mb"}))
 app.use(express.urlencoded({extended: true}));
 app.use(cookieParser())
-app.use(bodyParser.json({ limit: '10mb' }))
 
 
 app.use('/api/users', userRoutes)

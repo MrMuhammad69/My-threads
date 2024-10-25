@@ -1,9 +1,10 @@
 import Post from "../models/postModel.js";
 import User from "../models/userModel.js";
-
+import {v2 as cloudinary} from 'cloudinary'
 export async function createPost(req, res) {
     try {
-        const { postedBy, text, img } = req.body;
+        const { postedBy, text } = req.body;
+        let {img} = req.body
 
         // Check if required fields are present
         if (!postedBy || !text) {
@@ -14,7 +15,7 @@ export async function createPost(req, res) {
         const user = await User.findOne({ _id: postedBy });  // Corrected: passed an object with _id as the filter
 
         if (!user) {
-            return res.status(404).json({ message: "User not found" });
+            return res.status(404).json({ error: "User not found" });
         }
 
         // Check if the user is the one making the request
@@ -25,7 +26,11 @@ export async function createPost(req, res) {
         // Ensure the text length does not exceed the maximum allowed
         const maxLength = 1500;
         if (text.length > maxLength) {  // Corrected typo from "lenght" to "length"
-            return res.status(400).json({ message: `Text must be less than ${maxLength} characters` });
+            return res.status(400).json({ error: `Text must be less than ${maxLength} characters` });
+        }
+        if(img){
+            const uploadedResponse = await cloudinary.uploader.upload(img);
+            img = uploadedResponse.secure_url
         }
 
         // Create and save the new post
@@ -40,7 +45,7 @@ export async function createPost(req, res) {
         return res.status(201).json({ message: "Post created successfully", newPost });
 
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ error: error.message });
         console.log(error);
     }
 }
@@ -51,7 +56,7 @@ export async function getPost(req, res) {
         
         // Check if the post exists
         if (!post) {
-            return res.status(404).json({ message: "Post not found" });
+            return res.status(404).json({ error: "Post not found" });
         }
 
         // Respond with the found post
@@ -127,7 +132,7 @@ export const replyToPost = async (req,res) => {
         }
         const post = await Post.findById(postId)
         if(!post){
-            res.status(404).json({message: "The post is not found"})
+            res.status(404).json({error: "The post is not found"})
         }
         const reply = {userId, text,  userProfilePic, username}
         post.replies.push(reply)
@@ -135,7 +140,7 @@ export const replyToPost = async (req,res) => {
         res.status(200).json({message: "Reply added successfully", post})
 
     } catch (error) {
-        res.status(500).json({message: error.message})
+        res.status(500).json({error: error.message})
     }
     
 }
@@ -144,13 +149,27 @@ export async function getFeed(req, res) {
         const userId = req.user._id
         const user = await User.findById(userId)
         if(!user){
-            return res.status(404).json({message: "User not found"})
+            return res.status(404).json({error: "User not found"})
         }
         const following = user.following;
         const posts = await Post.find({postedBy:{$in:following}}).sort({createdAt: -1})
-        return res.status(200).json({feedPosts: posts})
+        return res.status(200).json(posts)
     } catch (error) {
-        res.status(500).json({message: error.message},)
+        res.status(500).json({error: error.message},)
     }
     
+}
+export const getUserPosts = async (req, res) => {
+    const { username } = req.params
+    try {
+        const user = await User.findOne({username})
+        if(!user){
+            return res.status(404).json({error: "User not found"})
+        }
+        const posts = await Post.find({postedBy: user._id}).sort({createdAt: -1})
+        res.status(200).json(posts)
+        
+    } catch (error) {
+        res.status(500).json({error: error.message})
+    }
 }

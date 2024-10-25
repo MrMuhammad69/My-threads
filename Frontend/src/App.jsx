@@ -9,6 +9,8 @@ import userAtom from "./atoms/user.atom.js"
 import Homepage from "./Pages/Homepage.jsx"
 import LogoutButton from "./Components/LogoutButton.jsx"
 import UpdateProfilePage from "./Pages/UpdateProfilePage.jsx"
+import CreatePost from "./Components/CreatePost.jsx"
+import LoginButton from "./Components/LoginButton.jsx"
 const App = () => {
   const user = useRecoilValue(userAtom)
   return (
@@ -26,6 +28,12 @@ const App = () => {
 
     {user && (
       <LogoutButton />
+    )}
+        {user && (
+      <CreatePost />
+    )}
+    {!user && (
+      <LoginButton />
     )}
     </Container>
   )
