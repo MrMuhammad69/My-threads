@@ -16,9 +16,11 @@ const Header = () => {
       )}
       <Image cursor={'pointer'} alt="logo" src={colorMode === 'dark' ? '/light-logo.svg': '/dark-logo.svg'} w={6} onClick={toggleColorMode} />
       {user && (
+        <>
         <Link to={`/user/${user.username}`}>
         <User size={24}/>
-        </Link>
+        </Link></>
+        
       )}
     </Flex>
   )

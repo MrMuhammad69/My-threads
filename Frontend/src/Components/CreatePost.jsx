@@ -13,29 +13,42 @@ import {
 import { useRef, useState } from "react"
 import usePreviewImg from "../hooks/usePreviewImage"
 import { Image as LucideImage } from "lucide-react"
-import { useRecoilValue } from "recoil"
+import { useRecoilState, useRecoilValue } from "recoil"
 import userAtom from "../atoms/user.atom"
 import useShowToast from "../hooks/useShowToast"
+import postsAtom from "../atoms/posts.atom"
 const CreatePost = () => {
     const showToast = useShowToast()
     const user = useRecoilValue(userAtom)
-    const handleCreatePost = async ()=> {
-        const res = await fetch('/api/posts/create', {
-            method: "POST",
-            headers: {
-                'Content-Type':'application/json'
-            },
-            body: JSON.stringify({postedBy:user._id,text:postText, img:imgUrl})
-        })
+    const [posts,  setPosts] = useRecoilState(postsAtom)
+    const [loading, setIsloading] = useState(false)
 
-        const data = await res.json()
-        if(data.error){
-            showToast("Error", data.error, 'error')
-         }
-        showToast('Success', "Post created Successfully", 'success')
-        onClose()
-        setPostText('')
-        setImgUrl('')
+    const handleCreatePost = async ()=> {
+        setIsLoading(true)
+        try {
+            const res = await fetch('/api/posts/create', {
+                method: "POST",
+                headers: {
+                    'Content-Type':'application/json'
+                },
+                body: JSON.stringify({postedBy:user._id,text:postText, img:imgUrl})
+            })
+    
+            const data = await res.json()
+            if(data.error){
+                showToast("Error", data.error, 'error')
+             }
+            showToast('Success', "Post created Successfully", 'success')
+            setPosts([data, ...posts])
+            onClose()
+            setPostText('')
+            setImgUrl('')
+        } catch (error) {
+            showToast("Error", error.message, 'error')
+        } finally {
+            setIsloading(false)
+        }
+        
     }
     const { isOpen, onOpen, onClose } = useDisclosure()
     const [postText, setPostText] = useState('')
@@ -59,11 +72,11 @@ const CreatePost = () => {
                 position={'fixed'} 
                 bottom={10} 
                 right={30} 
-                leftIcon={<AddIcon />} 
                 bg={useColorModeValue('gray.300', 'gray.dark')} 
                 onClick={onOpen}
+                size={'sm'}
             >
-                Create Post
+                <AddIcon />
             </Button>
             <Modal isOpen={isOpen} onClose={onClose}>
                 <ModalOverlay />
@@ -122,7 +135,7 @@ const CreatePost = () => {
                         )}
                     </ModalBody>
                     <ModalFooter>
-                        <Button colorScheme='blue' mr={3} onClick={handleCreatePost} isLoading={isLoading}>
+                        <Button colorScheme='blue' mr={3} onClick={handleCreatePost} isLoading={loading}>
                             Post
                         </Button>
                     </ModalFooter>

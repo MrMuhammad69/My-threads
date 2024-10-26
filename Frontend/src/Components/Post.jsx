@@ -5,12 +5,14 @@ import { useEffect, useState } from "react";
 import useShowToast from "../hooks/useShowToast.js";
 import {formatDistanceToNow} from 'date-fns'
 import { Delete } from 'lucide-react';
-import { useRecoilValue } from "recoil";
+import { useRecoilState, useRecoilValue } from "recoil";
 import userAtom from "../atoms/user.atom.js";
+import postsAtom from "../atoms/posts.atom.js";
 
 
 const Post = ({ post, postedBy }) => {
     const [user, setUser] = useState(null);
+    const [posts, setPosts] = useRecoilState(postsAtom)
     const showToast = useShowToast();
     const currentUser = useRecoilValue(userAtom)
     useEffect(() => {
@@ -46,9 +48,8 @@ const Post = ({ post, postedBy }) => {
                 return;
             }
             
-            showToast("Success", "Post deleted", 'success');
-            window.location.reload(); // Reload the page after successful deletion
-    
+            showToast("Success", "Post deleted", 'success'); // Reload the page after successful deletion
+            setPosts(posts.filter((p) => p._id !== post._id))
         } catch (error) {
             showToast("Error", error.message, 'error');
         }

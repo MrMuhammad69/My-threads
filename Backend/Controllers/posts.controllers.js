@@ -42,7 +42,7 @@ export async function createPost(req, res) {
 
         await newPost.save();
 
-        return res.status(201).json({ message: "Post created successfully", newPost });
+        return res.status(201).json(newPost);
 
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -60,7 +60,7 @@ export async function getPost(req, res) {
         }
 
         // Respond with the found post
-        res.status(200).json({ post });
+        res.status(200).json(post);
 
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -120,30 +120,32 @@ export const likeUnlikePost = async (req, res) => {
 	}
 };
 
-export const replyToPost = async (req,res) => {
+export const replyToPost = async (req, res) => {
     try {
-        const {text} = req.body
-        const postId = req.params.id
-        const userId = req.user._id
-        const userProfilePic = req.user.userProfilePic
-        const username = req.user.username
-        if(!text){
-            return res.status(400).json({error: "Please enter a reply text."})
-        }
-        const post = await Post.findById(postId)
-        if(!post){
-            res.status(404).json({error: "The post is not found"})
-        }
-        const reply = {userId, text,  userProfilePic, username}
-        post.replies.push(reply)
-        await post.save()
-        res.status(200).json({message: "Reply added successfully", post})
+        const { text } = req.body;
+        const postId = req.params.id;
+        const userId = req.user._id;
+        const userProfilePic = req.user.profilePic; // Corrected field name
+        const username = req.user.username;
 
+        if (!text) {
+            return res.status(400).json({ error: "Please enter a reply text." });
+        }
+
+        const post = await Post.findById(postId);
+        if (!post) {
+            return res.status(404).json({ error: "The post is not found" }); // Added return
+        }
+
+        const reply = { userId, text, userProfilePic, username };
+        post.replies.push(reply);
+        await post.save();
+
+        res.status(200).json(reply);
     } catch (error) {
-        res.status(500).json({error: error.message})
+        res.status(500).json({ error: error.message });
     }
-    
-}
+};
 export async function getFeed(req, res) {
     try {
         const userId = req.user._id
