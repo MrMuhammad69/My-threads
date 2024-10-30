@@ -1,4 +1,4 @@
-import { Container, Box } from "@chakra-ui/react"
+import { Box, Container } from "@chakra-ui/react"
 import { Navigate, Route, Routes, useParams } from "react-router"
 import UserPage from "./Pages/UserPage.jsx"
 import PostPage from "./Pages/PostPage.jsx"
@@ -7,16 +7,16 @@ import AuthPage from "./Pages/AuthPage.jsx"
 import { useRecoilValue } from "recoil"
 import userAtom from "./atoms/user.atom.js"
 import Homepage from "./Pages/Homepage.jsx"
-import LogoutButton from "./Components/LogoutButton.jsx"
 import UpdateProfilePage from "./Pages/UpdateProfilePage.jsx"
 import CreatePost from "./Components/CreatePost.jsx"
 import LoginButton from "./Components/LoginButton.jsx"
-
+import ChatPage from "./Components/ChatPage.jsx"
 const App = () => {
   const user = useRecoilValue(userAtom)
   const currentUser = useRecoilValue(userAtom)
 
   return (
+    <Box position={'relative'} w={'100%'}>
     <Container>
       <Header />
       <Routes>
@@ -26,6 +26,7 @@ const App = () => {
         <Route path="/user/:username" element={<UserWithCreatePost currentUser={currentUser} />} />
         
         <Route path="/:username/post/:pid" element={<PostPage />} />
+        <Route path="/chat" element={ user ? <ChatPage /> : <Navigate to='/auth' />} />
         <Route path="/update" element={user ? <UpdateProfilePage /> : <Navigate to='/auth' />} />
         
         {/* Catch-all route */}
@@ -34,13 +35,12 @@ const App = () => {
 
       {user ? (
         // Logout button only shown on medium and larger screens
-        <Box display={{ base: "none", md: "block" }}>
-          <LogoutButton />
-        </Box>
+        null
       ) : (
         <LoginButton />
       )}
     </Container>
+    </Box>
   )
 }
 
