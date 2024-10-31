@@ -11,13 +11,17 @@ import UpdateProfilePage from "./Pages/UpdateProfilePage.jsx"
 import CreatePost from "./Components/CreatePost.jsx"
 import LoginButton from "./Components/LoginButton.jsx"
 import ChatPage from "./Components/ChatPage.jsx"
+import { useLocation } from "react-router"
 const App = () => {
   const user = useRecoilValue(userAtom)
   const currentUser = useRecoilValue(userAtom)
-
+  const {pathname} = useLocation()
   return (
     <Box position={'relative'} w={'100%'}>
-    <Container>
+    <Container maxW={pathname === '/' ? {
+      base:'620px',
+      md:'900px'
+    } : '620px'}>
       <Header />
       <Routes>
         <Route path="/" element={user ? <Homepage /> : <Navigate to='/auth' />} />

@@ -1,10 +1,9 @@
-import { Avatar, AvatarBadge, Flex, Image, Stack, WrapItem, Text, useColorModeValue, useColorMode } from "@chakra-ui/react";
+import { Avatar, AvatarBadge, Flex, Image, Stack, WrapItem, Text, useColorModeValue, useColorMode, Box } from "@chakra-ui/react";
 import { useRecoilState, useRecoilValue } from "recoil";
 import userAtom from "../atoms/user.atom";
 import { selectedConversationAtom } from "../atoms/message.atom"; // Import the selectedConversation atom
-import { Check } from 'lucide-react';
-
-const Conversation = ({ conversation }) => {
+import {BsCheck2All} from 'react-icons/bs'
+const Conversation = ({ conversation, isOnline }) => {
     const user = conversation?.participants[0];
     const lastMessage = conversation?.lastMessage;
     const currentUser = useRecoilValue(userAtom);
@@ -38,7 +37,7 @@ const Conversation = ({ conversation }) => {
                     sm: 'sm',
                     md: 'md'
                 }} src={user.profilePic}>
-                    <AvatarBadge boxSize={'1em'} bg={"green.500"} />
+                    {isOnline ? <AvatarBadge boxSize={'1em'} bg={"green.500"} /> : null}
                 </Avatar>
             </WrapItem>
             <Stack direction={'column'} fontSize={'sm'}>
@@ -46,8 +45,12 @@ const Conversation = ({ conversation }) => {
                     {user.username} <Image src="/verified.png" w={4} h={4} ml={1} />
                 </Text>
                 <Text fontSize={'xs'} display={'flex'} alignItems={'center'} gap={1}>
-                    {currentUser._id === lastMessage.sender ? <Check size={20} /> : null}
-                    {lastMessage.text.length > 12 ? lastMessage.text.slice(0, 12) + '...' : lastMessage.text}
+                    {currentUser._id === lastMessage.sender ? (
+                        <Box color={lastMessage.seen ? 'blue.400' : ''}>
+                            <BsCheck2All size={20} />
+                        </Box>
+                    ) : null}
+                    {lastMessage.text.length > 13 ? lastMessage.text.slice(0, 13) + '...' : lastMessage.text}
                 </Text>
             </Stack>
         </Flex>

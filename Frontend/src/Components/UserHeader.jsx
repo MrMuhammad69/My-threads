@@ -1,78 +1,78 @@
-import { Avatar, Box, Flex, VStack, Text, Link, Menu, MenuButton, Portal, MenuList, MenuItem, useToast, Button } from "@chakra-ui/react";
+import { 
+  Avatar, 
+  Box, 
+  Flex, 
+  VStack, 
+  Text, 
+  Link, 
+  Menu, 
+  MenuButton, 
+  Portal, 
+  MenuList, 
+  MenuItem, 
+  useToast, 
+  Button 
+} from "@chakra-ui/react";
 import { Instagram, MoreHorizontal } from 'lucide-react';
-import { useRecoilValue } from 'recoil'
-import userAtom from '../atoms/user.atom.js'
-import { Link as RouterLink } from 'react-router-dom'
-import { useState, useEffect } from "react";
-import useShowToast from "../hooks/useShowToast";
+import { useRecoilValue } from 'recoil';
+import userAtom from '../atoms/user.atom.js';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import useFollowUnfollow from "../hooks/useFollowUnfollow.js";
+import useShowToast from "../hooks/useShowToast.js";
+import useLogout from '../hooks/useLogout.js';
+import { useState } from "react";
 
 const UserHeader = ({ user }) => {
-  const [updating, setUpdating ] = useState(false )
-  const showToast = useShowToast()
-  const toast = useToast()
-  const currentUser = useRecoilValue(userAtom) // this is the user that has logged in
-  const [following, setFollowing] = useState(user.followers.includes(currentUser?._id))
 
-  useEffect(() => {
-    if (currentUser && user) {
-      setFollowing(user.followers.includes(currentUser?._id))
+  const [loading, setLoading] = useState(false);
+  const toast = useToast();
+  const currentUser = useRecoilValue(userAtom);
+  const showToast = useShowToast();
+  const logout = useLogout();
+  const navigate = useNavigate(); // Initialize navigate
+
+  const handleFreezeAccount = async () => {
+    if(window.confirm('Are you sure you want to freeze your account?')){
+      setLoading(true);
+      try {
+        const res = await fetch('/api/users/freeze', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await res.json();
+
+        if(data.success){
+          await logout();
+          navigate('/'); // Redirect to homepage
+        } else if(data.error){
+          showToast('Error', data.error, 'error');
+        }
+      } catch (error) {
+        showToast('Error', error.message, 'error');
+      } finally {
+        setLoading(false);
+      }
     }
-  }, [currentUser, user])
+  };
 
   const copyUrl = () => {
-    const currentURL = window.location.href
+    const currentURL = window.location.href;
     navigator.clipboard.writeText(currentURL).then(() => {
-      toast({ description: 'Profile link is copied' })
-    })
-  }
+      toast({ description: 'Profile link is copied' });
+    });
+  };
 
-  const handleFollowUnfollow = async () => {
-    if (!currentUser) {
-     showToast('Error', 'You have to login in order to Follow', 'error')
-      return
-    }
-    if(updating) return;
-    setUpdating(true)
-    try {
-      const res = await fetch(`/api/users/follow/${user._id}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': "application/json"
-        }
-      })
-      const data = await res.json()
-      if (data.error) {
-        showToast('Error', data.error, 'error')
-        return
-      }
-      setFollowing(!following)
-      if(following){
-        showToast('Success', `You have unfollowed ${user.name}`, 'success')
-        user.followers.pop()
-
-      } else{
-        showToast("Success", `You have followed ${user.name}`, 'success')
-        user.followers.push(currentUser?._id)
-      }
-    } catch (error) {
-      showToast("Error", error, 'error')
-    } finally{
-      setUpdating(false)
-    }
-  }
+  const { handleFollowUnfollow, updating, following } = useFollowUnfollow(user);
 
   if (!user) {
-    return null // or a loading indicator
+    return null;
   }
 
   return (
     <VStack gap={4} align={'start'} w={'full'}>
       <Flex justifyContent={'space-between'} w={'full'} alignItems={'center'}>
         <Box>
-          <Text fontSize={{
-            base: 'lg',
-            md: 'xl',
-          }} fontWeight={"bold"}>
+          <Text fontSize={{ base: 'lg', md: 'xl' }} fontWeight={"bold"}>
             {user.name}
           </Text>
           <Flex gap={2} alignItems={'center'}>
@@ -85,39 +85,27 @@ const UserHeader = ({ user }) => {
           </Flex>
         </Box>
 
-        {user.profilePic ? (
-          <Avatar
-            name={user.name}
-            src={user.profilePic}
-            size={{
-              base: 'md',
-              md: 'xl',
-            }}
-          />
-        ) : (
-          <Avatar
-            name={user.name}
-            src='https://bit.ly/broken-link'
-            size={{
-              base: 'md',
-              md: 'xl',
-            }}
-          />
-        )}
+        <Avatar
+          name={user.name}
+          src={user.profilePic || 'https://bit.ly/broken-link'}
+          size={{ base: 'md', md: 'xl' }}
+        />
       </Flex>
 
       <Text>
         {user.bio}
       </Text>
 
-      {currentUser && currentUser?._id === user._id && (
-        <Link to="/update" as={RouterLink}>
-          <Button size={'sm'}>
+      {currentUser && currentUser?._id === user._id ? (
+        <Flex gap={2}>
+          <Button as={RouterLink} to="/update" size={'sm'}>
             Update Profile
           </Button>
-        </Link>
-      )}
-      {currentUser && currentUser?._id !== user._id && (
+          <Button size={'sm'} bg={'red.400'} _hover={{ bg: 'red.500' }}  isLoading={loading} onClick={handleFreezeAccount}>
+            Freeze Account
+          </Button>
+        </Flex>
+      ) : (
         <Button size={'sm'} onClick={handleFollowUnfollow} isLoading={updating}>
           {following ? 'Unfollow' : 'Follow'}
         </Button>
@@ -128,7 +116,7 @@ const UserHeader = ({ user }) => {
           <Text color={'gray.light'}>
             {user.followers.length} followers
           </Text>
-          <Box w='1' h='1' bg={'gray.light'} borderRadius={'full'}></Box>
+          <Box w='1' h='1' bg={'gray.light'} borderRadius={'full'} />
           <Link color={'gray.light'} href="https://instagram.com" isExternal>
             instagram.com
           </Link>
@@ -151,6 +139,7 @@ const UserHeader = ({ user }) => {
           </Box>
         </Flex>
       </Flex>
+
       <Flex w={'full'}>
         <Flex flex={1} borderBottom={'1.5px solid white'} justifyContent={'center'} pb={3} cursor={'pointer'}>
           <Text fontWeight={'bold'}>Threads</Text>

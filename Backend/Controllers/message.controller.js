@@ -1,9 +1,10 @@
 import Conversation from "../models/conversationModel.js";
 import Message from "../models/MessageModel.js";
-
+import { getRecipientSocketId, io } from "../Socket/socket.js";
+import {v2 as cloudinary} from "cloudinary"
 export async function SendMessage(req, res) {
     try {
-        const { recipientId, message } = req.body;
+        const { recipientId, message, img } = req.body;
         const senderId = req.user?._id;
 
         // Check if all required data is provided
@@ -13,8 +14,9 @@ export async function SendMessage(req, res) {
         if (!recipientId) {
             return res.status(400).json({ error: "Recipient ID is required." });
         }
-        if (!message || message.trim() === "") {
-            return res.status(400).json({ error: "Message content is required." });
+        // Modified check: Allow either message or image
+        if (!message && !img) {
+            return res.status(400).json({ error: "Message content or image is required." });
         }
 
         // Find existing conversation or create a new one
@@ -24,7 +26,7 @@ export async function SendMessage(req, res) {
             conversation = new Conversation({
                 participants: [recipientId, senderId],
                 lastMessage: {
-                    text: message,
+                    text: message || "Sent an image", // Default text for image-only messages
                     sender: senderId,
                     seen: false
                 }
@@ -32,16 +34,27 @@ export async function SendMessage(req, res) {
             await conversation.save();
         }
 
+        let uploadedImageUrl = null;
+        if (img) {
+            const uploadedImage = await cloudinary.uploader.upload(img);
+            uploadedImageUrl = uploadedImage.secure_url;
+        }
+
         const newMessage = new Message({
             conversationId: conversation._id,
             sender: senderId,
-            text: message
+            text: message || "Sent an image", // Default text for image-only messages
+            img: uploadedImageUrl
         });
 
         await Promise.all([
             newMessage.save(),
-            conversation.updateOne({ lastMessage: { text: message, sender: senderId, seen: false } })
+            conversation.updateOne({ lastMessage: { text: message || "Sent an image", sender: senderId, seen: false } })
         ]);
+        const recipientSocketId = getRecipientSocketId(recipientId)
+        if(recipientSocketId){
+            io.to(recipientSocketId).emit('newMessage', newMessage)
+        }
 
         // Log the message after it has been saved
         console.log("New message sent:", newMessage);
